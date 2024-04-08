@@ -27,12 +27,7 @@ public class LevelGenerator : MonoBehaviour
             var wall = levelWalls[i];
             for (int side = 0; side < 4; side++)
             {
-                wall.SetSideWall(new LevelWall.SideConnectInfo()
-                {
-                    Wall = levelWalls[levelData[i][side].ID],
-                    Angle = levelData[i][side].Angle,
-                    DirOut = levelData[i][side].Dir
-                }, side);
+                wall.SetSideWall(new LevelWall.SideConnectInfo(levelWalls[levelData[i][side].ID], levelData[i][side].Dir, levelData[i][side].Angle), side);
             }
             wall.BuildPlates(levelWallSize);
         }
@@ -51,9 +46,7 @@ public class LevelGenerator : MonoBehaviour
         var levelWall = wall.AddComponent<LevelWall>();
         levelWalls[id] = levelWall;
 
-        levelWall.Up = up;
-        levelWall.Right = right;
-        levelWall.Front = front;
+        levelWall.SetWallVectors(id, front, right, up);
         
         for (int side = 0; side < 4; side++)
         {
