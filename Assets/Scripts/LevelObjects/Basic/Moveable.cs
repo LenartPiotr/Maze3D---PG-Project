@@ -8,11 +8,16 @@ using UnityEngine.UIElements;
 
 public class Moveable : MonoBehaviour
 {
-    private int rotation = 0;
+    protected int rotation = 0;
+    public int Rotation => rotation;
 
     [SerializeField] private LevelWall currentWall;
     [SerializeField] private int x;
     [SerializeField] private int y;
+    [Range(0f, 2f)]
+    [SerializeField] private float moveY = 0.5f;
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float rotSpeed = 800f;
 
     [SerializeField]
     private UnityEvent onTeleport;
@@ -26,13 +31,45 @@ public class Moveable : MonoBehaviour
         }
     }
 
+    protected Vector3 targetPosition;
+    protected Quaternion targetRotation;
+
+    protected virtual void Start()
+    {
+        targetPosition = GetTargetPosition();
+        targetRotation = GetTargetRotation();
+        transform.position = targetPosition;
+        transform.rotation = targetRotation;
+    }
+
+    protected virtual void FixedUpdate()
+    {
+        transform.position = Vector3.MoveTowards(transform.position, targetPosition, Time.fixedDeltaTime * moveSpeed);
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, Time.fixedDeltaTime * rotSpeed);
+    }
+
+    protected virtual void Update()
+    {
+        //
+    }
+
+    public bool IsMoving() => Vector3.Distance(transform.position, targetPosition) < 0.01;
+    public bool IsRotating() => Quaternion.Angle(transform.rotation, targetRotation) < 0.01;
+
     public void SetPos(LevelWall targetWall, int x, int y)
     {
         currentWall = targetWall;
         this.x = x;
         this.y = y;
+        targetPosition = GetTargetPosition();
+        targetRotation = GetTargetRotation();
+        transform.position = targetPosition;
+        transform.rotation = targetRotation;
         onTeleport.Invoke();
     }
+
+    protected virtual Vector3 GetTargetPosition() => GetPosition().GetField().transform.position + currentWall.Front * moveY;
+    protected virtual Quaternion GetTargetRotation() => Quaternion.LookRotation(currentWall.Front, GetVectorFromRotation(currentWall, rotation));
 
     public void Move(int direction)
     {
@@ -52,11 +89,11 @@ public class Moveable : MonoBehaviour
         onMove.Invoke();
     }
 
-    public virtual bool CanBePushed() { return true; }
-    public virtual bool CanPushOthers() { return true; }
-    public virtual int GetPushStrength() { return 1; }
+    protected virtual bool CanBePushed() { return true; }
+    protected virtual bool CanPushOthers() { return true; }
+    protected virtual int GetPushStrength() { return 1; }
 
-    public Position GetNextFieldInDirection(int direction, out bool needCross, ref int addRot)
+    protected Position GetNextFieldInDirection(int direction, out bool needCross, ref int addRot)
     {
         Position newPosition = GetPosition();
         Position position = GetPosition();
@@ -73,7 +110,7 @@ public class Moveable : MonoBehaviour
         return newPosition;
     }
 
-    public bool CanBeMovedInDirection(int direction, int strength)
+    protected bool CanBeMovedInDirection(int direction, int strength)
     {
         if (strength < -10) return false;
         int addRot = 0;
@@ -160,6 +197,21 @@ public class Moveable : MonoBehaviour
         currentWall = targetPosition.Wall;
         x = targetPosition.X;
         y = targetPosition.Y;
+
+        this.targetPosition = GetTargetPosition();
+        targetRotation = GetTargetRotation();
+    }
+
+    protected Vector3 GetVectorFromRotation(LevelWall wall, int rotation)
+    {
+        return rotation switch
+        {
+            0 => wall.Up,
+            1 => wall.Right,
+            2 => -wall.Up,
+            3 => -wall.Right,
+            _ => wall.Front,
+        };
     }
 
     public class Position

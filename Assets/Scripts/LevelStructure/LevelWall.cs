@@ -17,6 +17,9 @@ public class LevelWall : MonoBehaviour
     public Vector3 Right => right;
     public Vector3 Up => up;
 
+    [SerializeField, HideInInspector] private int size;
+    public int Size => size;
+
     public void SetWallVectors(int id, Vector3 front, Vector3 right, Vector3 up)
     {
         this.id = id;
@@ -27,6 +30,7 @@ public class LevelWall : MonoBehaviour
 
     [SerializeField]
     private SideConnectInfo[] sideWallReferences;
+    public int GetConnectAngle(int side) => sideWallReferences[side].Angle;
 
     [SerializeField]
     private Serializable2DArray<LevelField> fields;
@@ -52,6 +56,7 @@ public class LevelWall : MonoBehaviour
 
     public void BuildPlates(int size)
     {
+        this.size = size;
         fields = new Serializable2DArray<LevelField>(size, size);
         for (int x = 0; x < size; x++)
         {
