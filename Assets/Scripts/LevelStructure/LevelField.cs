@@ -19,10 +19,12 @@ public class LevelField : MonoBehaviour
     [SerializeField] private LevelWall parentWall;
     [SerializeField] private int x;
     [SerializeField] private int y;
+    [SerializeField] private bool canEnter = true;
 
     public LevelWall ParentWall => parentWall;
     public int X => x;
     public int Y => y;
+    public bool CanEnter { get => canEnter; set => canEnter = value; }
 
     public bool TryGetStaticObject(out StaticObject staticObject)
     {

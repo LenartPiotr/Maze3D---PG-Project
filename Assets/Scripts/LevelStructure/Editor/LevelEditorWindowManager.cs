@@ -15,6 +15,10 @@ public class LevelEditorWindowManager : EditorWindow
 
     int levelWallSize = 5;
 
+    Color[] fieldsColors = new Color[] {
+        new(51, 204, 51), new(0, 153, 51), new(255, 153, 0), new(204, 51, 0)
+    };
+
     private void OnGUI()
     {
         var redButtonStyle = new GUIStyle(GUI.skin.button);
@@ -31,6 +35,18 @@ public class LevelEditorWindowManager : EditorWindow
         GUILayout.EndHorizontal();
 
         if (GUILayout.Button("Create level from design cubes", redButtonStyle)) CreateLevelFromDesignCubes();
+
+        GUILayout.Space(10);
+        GUILayout.BeginHorizontal();
+
+        for (int i = 0; i < 4; i++) fieldsColors[i] = EditorGUILayout.ColorField(fieldsColors[i]);
+
+        GUILayout.EndHorizontal();
+
+        if (GUILayout.Button("Paint")) PaintFields();
+
+        if (GUILayout.Button("Toogle Enter On")) ToogleEnter(true);
+        if (GUILayout.Button("Toogle Enter Off")) ToogleEnter(false);
     }
 
     void CreateEmptyDesignCube()
@@ -69,5 +85,27 @@ public class LevelEditorWindowManager : EditorWindow
         var generator = generatorObject.AddComponent<LevelGenerator>();
         generator.SetLevelData(levelData);
         generator.CreateLevelFromData(levelWallSize);
+    }
+
+    void PaintFields()
+    {
+        foreach (LevelField field in FindObjectsOfType<LevelField>())
+        {
+            int colorIndex = (field.CanEnter ? 0 : 2) + (field.X + field.Y) % 2;
+            Renderer r = field.GetComponent<Renderer>();
+            r.sharedMaterial.color = fieldsColors[colorIndex];
+        }
+    }
+
+    void ToogleEnter(bool value)
+    {
+        foreach(var obj in Selection.gameObjects)
+        {
+            if (obj.TryGetComponent(out LevelField field))
+            {
+                field.CanEnter = value;
+            }
+        }
+        PaintFields();
     }
 }

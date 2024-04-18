@@ -125,6 +125,7 @@ public class Moveable : MonoBehaviour
         nextMoveableObject = newPosition.Wall[newPosition.X, newPosition.Y].MoveableObject;
 
         if (nextStaticObject != null && !nextStaticObject.CanEnter()) return false;
+        if (!newPosition.Wall[newPosition.X, newPosition.Y].CanEnter) return false;
         if (nextMoveableObject != null)
         {
             if (!nextMoveableObject.CanBePushed()) return false;

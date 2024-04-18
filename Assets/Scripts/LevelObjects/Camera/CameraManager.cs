@@ -7,8 +7,8 @@ public class CameraManager : MonoBehaviour
 {
     [SerializeField] private Moveable target;
     [SerializeField] private float distance = 5f;
-    [SerializeField] private float moveSpeed = 2f;
-    [SerializeField] private float rotSpeed = 10f;
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float rotSpeed = 8f;
     [SerializeField] private float devitationMultiplier = 1f;
 
     Vector3 vecUp;
@@ -18,8 +18,8 @@ public class CameraManager : MonoBehaviour
     void Start()
     {
         targetPosition = GetTargetPosition();
-        targetRotation = GetTargetRotation();
         transform.position = targetPosition;
+        targetRotation = GetTargetRotation();
         transform.rotation = targetRotation;
     }
 
@@ -38,8 +38,8 @@ public class CameraManager : MonoBehaviour
     public void UpdatePositionInstantly()
     {
         targetPosition = GetTargetPosition();
-        targetRotation = GetTargetRotation();
         transform.position = targetPosition;
+        targetRotation = GetTargetRotation();
         transform.rotation = targetRotation;
     }
 
