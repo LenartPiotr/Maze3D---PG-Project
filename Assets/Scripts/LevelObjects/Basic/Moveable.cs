@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Events;
 using UnityEngine.UIElements;
 
@@ -71,21 +72,12 @@ public class Moveable : MonoBehaviour
     protected virtual Vector3 GetTargetPosition() => GetPosition().GetField().transform.position + currentWall.Front * moveY;
     protected virtual Quaternion GetTargetRotation() => Quaternion.LookRotation(currentWall.Front, GetVectorFromRotation(currentWall, rotation));
 
-    public void Move(int direction)
+    protected void Move(Movement movement)
     {
-        int addRot = 0;
-        direction += rotation;
-        direction %= 4;
-        Position oldPosition = GetPosition();
-        Position newPosition = GetNextFieldInDirection(direction, out bool needCross, ref addRot);
-        if (!CanBeMovedInDirection(direction, GetPushStrength())) return;
-        if (needCross) {
-            direction += addRot;
-            rotation = addRot;
-        }
-        else direction += rotation;
-        direction %= 4;
-        MoveFromTo(oldPosition, newPosition, direction);
+        Movement nextMovement = GetNextFieldInDirection(movement);
+        if (!CanBeMovedInDirection(movement, GetPushStrength())) return;
+        rotation = (rotation - movement.Rotation + nextMovement.Rotation + 4) % 4;
+        MoveFromTo(movement, nextMovement);
         onMove.Invoke();
     }
 
@@ -93,43 +85,40 @@ public class Moveable : MonoBehaviour
     protected virtual bool CanPushOthers() { return true; }
     protected virtual int GetPushStrength() { return 1; }
 
-    protected Position GetNextFieldInDirection(int direction, out bool needCross, ref int addRot)
+    protected Movement GetNextFieldInDirection(Movement movement)
     {
-        Position newPosition = GetPosition();
-        Position position = GetPosition();
+        Position newPosition = movement.position;
+        Position position = movement.position;
         int wallSize = position.Wall.GetWallSize();
-        needCross = false;
-        switch (direction)
+        bool needCross = false;
+        switch (movement.Rotation)
         {
             case 0: if (position.Y > 0)             newPosition.Y--; else needCross = true; break;
             case 1: if (position.X < wallSize - 1)  newPosition.X++; else needCross = true; break;
             case 2: if (position.Y < wallSize - 1)  newPosition.Y++; else needCross = true; break;
             case 3: if (position.X > 0)             newPosition.X--; else needCross = true; break;
         }
-        if (needCross) newPosition = HaveToCross(position, direction, ref addRot);
-        return newPosition;
+        if (needCross) return HaveToCross(movement);
+        return new Movement(newPosition, movement.Rotation);
     }
 
-    protected bool CanBeMovedInDirection(int direction, int strength)
+    protected bool CanBeMovedInDirection(Movement movement, int strength)
     {
-        if (strength < -10) return false;
-        int addRot = 0;
-        Position newPosition = GetNextFieldInDirection(direction, out bool needCross, ref addRot);
-
-        int newDir = (direction + addRot) % 4;
+        if (strength <= -10) return false;
+        Movement nextMovement = GetNextFieldInDirection(movement);
 
         StaticObject nextStaticObject;
         Moveable nextMoveableObject;
 
-        newPosition.Wall[newPosition.X, newPosition.Y].TryGetStaticObject(out nextStaticObject);
-        nextMoveableObject = newPosition.Wall[newPosition.X, newPosition.Y].MoveableObject;
+        nextMovement.position.Wall[nextMovement.position.X, nextMovement.position.Y].TryGetStaticObject(out nextStaticObject);
+        nextMoveableObject = nextMovement.position.Wall[nextMovement.position.X, nextMovement.position.Y].MoveableObject;
 
         if (nextStaticObject != null && !nextStaticObject.CanEnter()) return false;
-        if (!newPosition.Wall[newPosition.X, newPosition.Y].CanEnter) return false;
+        if (!nextMovement.position.Wall[nextMovement.position.X, nextMovement.position.Y].CanEnter) return false;
         if (nextMoveableObject != null)
         {
             if (!nextMoveableObject.CanBePushed()) return false;
-            if (!CanBeMovedInDirection(newDir, strength - 1)) return false;
+            if (!nextMoveableObject.CanBeMovedInDirection(nextMovement, strength - 1)) return false;
         }
         
         return true;
@@ -144,23 +133,24 @@ public class Moveable : MonoBehaviour
         }; 
     }
 
-    Position HaveToCross(Position pos, int dir, ref int addRot)
+    Movement HaveToCross(Movement movement)
     {
-        int wallSize = pos.Wall.GetWallSize();
+        int wallSize = movement.position.Wall.GetWallSize();
 
         int nX = 0, nY = 0;
         int lastPos = wallSize - 1;
+        int x = movement.position.X, y = movement.position.Y;
 
         int A = 0;
-        switch (dir)
+        switch (movement.Rotation)
         {
-            case 0: A = pos.X; break;
-            case 1: A = pos.Y; break;
-            case 2: A = lastPos - pos.X; break;
-            case 3: A = lastPos - pos.Y; break;
+            case 0: A = x; break;
+            case 1: A = y; break;
+            case 2: A = lastPos - x; break;
+            case 3: A = lastPos - y; break;
         }
 
-        switch (pos.Wall.GetSideOutDirection(dir))
+        switch (movement.position.Wall.GetSideOutDirection(movement.Rotation))
         {
             case 0: nX = lastPos - A; nY = 0; break;
             case 1: nX = lastPos; nY = lastPos - A; break;
@@ -168,36 +158,45 @@ public class Moveable : MonoBehaviour
             case 3: nX = 0; nY = A; break;
         }
 
-        addRot = pos.Wall.GetSideOutDirection(dir) - dir;
+        return new Movement(new Position()
+        {
+            Wall = movement.position.Wall.GetWallOnSide(movement.Rotation),
+            X = nX,
+            Y = nY
+        }, movement.position.Wall.GetSideOutDirection(movement.Rotation) + 2);
+
+        /*
+        addRot = pos.Wall.GetSideOutDirection(movement.Rotation) - movement.Rotation;
         if (addRot < 0) addRot += 4;
         addRot += 2 + rotation;
         addRot %= 4;
 
         return new Position()
         {
-            Wall = pos.Wall.GetWallOnSide(dir),
+            Wall = pos.Wall.GetWallOnSide(movement.Rotation),
             X = nX,
             Y = nY
         };
+        */
     }
-    void MoveFromTo(Position fromPosition, Position targetPosition, int dir)
+    void MoveFromTo(Movement movementFrom, Movement movementTo)
     {
         Moveable nextMoveableObject;
 
-        fromPosition.Wall[fromPosition.X, fromPosition.Y].TryGetStaticObject(out StaticObject currentStaticObject);
-        targetPosition.Wall[targetPosition.X, targetPosition.Y].TryGetStaticObject(out StaticObject nextStaticObject);
-        nextMoveableObject = targetPosition.Wall[targetPosition.X, targetPosition.Y].MoveableObject;
+        movementFrom.position.Wall[movementFrom.position.X, movementFrom.position.Y].TryGetStaticObject(out StaticObject currentStaticObject);
+        movementTo.position.Wall[movementTo.position.X, movementTo.position.Y].TryGetStaticObject(out StaticObject nextStaticObject);
+        nextMoveableObject = movementTo.position.Wall[movementTo.position.X, movementTo.position.Y].MoveableObject;
 
-        if (nextMoveableObject != null) nextMoveableObject.Move(dir);
+        if (nextMoveableObject != null) nextMoveableObject.Move(movementTo);
         if (currentStaticObject != null) currentStaticObject.Leave(this);
         if (nextStaticObject != null) nextStaticObject.Enter(this);
 
-        fromPosition.GetField().MoveableObject = null;
-        targetPosition.GetField().MoveableObject = this;
+        movementFrom.position.GetField().MoveableObject = null;
+        movementTo.position.GetField().MoveableObject = this;
 
-        currentWall = targetPosition.Wall;
-        x = targetPosition.X;
-        y = targetPosition.Y;
+        currentWall = movementTo.position.Wall;
+        x = movementTo.position.X;
+        y = movementTo.position.Y;
 
         this.targetPosition = GetTargetPosition();
         targetRotation = GetTargetRotation();
@@ -214,12 +213,34 @@ public class Moveable : MonoBehaviour
             _ => wall.Front,
         };
     }
+    protected Movement MovementFromCameraDirection(int direction)
+    {
+        return new Movement(GetPosition(), direction + rotation);
+    }
 
-    public class Position
+    public struct Position
     {
         public LevelWall Wall;
         public int X;
         public int Y;
-        public LevelField GetField() => Wall[X, Y];
+        public readonly LevelField GetField() => Wall[X, Y];
+    }
+
+    protected struct Movement
+    {
+        public Position position;
+        private int rotation;
+
+        public Movement(Position position, int rotation)
+        {
+            this.position = position;
+            this.rotation = rotation % 4;
+        }
+
+        public int Rotation
+        {
+            readonly get => rotation;
+            set => rotation = value % 4;
+        }
     }
 }

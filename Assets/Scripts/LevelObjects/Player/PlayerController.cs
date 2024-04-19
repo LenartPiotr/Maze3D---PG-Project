@@ -30,22 +30,22 @@ public class PlayerController : Moveable
         if (up)
         {
             selfRotation = 0;
-            Move(0);
+            Move(MovementFromCameraDirection(0));
         }
         if (right)
         {
             selfRotation = 1;
-            Move(1);
+            Move(MovementFromCameraDirection(1));
         }
         if (down)
         {
             selfRotation = 2;
-            Move(2);
+            Move(MovementFromCameraDirection(2));
         }
         if (left)
         {
             selfRotation = 3;
-            Move(3);
+            Move(MovementFromCameraDirection(3));
         }
 
         // LevelField field = GetPosition().GetField();

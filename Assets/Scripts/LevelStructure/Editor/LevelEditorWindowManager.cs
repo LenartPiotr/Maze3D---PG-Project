@@ -16,7 +16,10 @@ public class LevelEditorWindowManager : EditorWindow
     int levelWallSize = 5;
 
     Color[] fieldsColors = new Color[] {
-        new(51, 204, 51), new(0, 153, 51), new(255, 153, 0), new(204, 51, 0)
+        new(0.2f, 0.8f, 0.2f),
+        new(0f, 0.6f, 0.2f),
+        new(1f, 0.6f, 0f),
+        new(0.8f, 0.2f, 0f)
     };
 
     private void OnGUI()
