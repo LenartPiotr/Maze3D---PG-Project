@@ -22,6 +22,17 @@ public class LevelFieldInspector : Editor
                 field.MoveableObject.transform.LookAt(field.MoveableObject.transform.position + field.ParentWall.Right, field.ParentWall.Front);
             }
         }
+
+        StaticObject staticObjectBefore = field.StaticObject;
+        field.StaticObject = (StaticObject)EditorGUILayout.ObjectField("Static object", field.StaticObject, typeof(StaticObject), true);
+        if (staticObjectBefore != field.StaticObject)
+        {
+            if (field.StaticObject != null)
+            {
+                field.StaticObject.transform.position = field.transform.position + field.ParentWall.Front;
+                field.StaticObject.transform.LookAt(field.StaticObject.transform.position + field.ParentWall.Right, field.ParentWall.Front);
+            }
+        }
     }
 }
 

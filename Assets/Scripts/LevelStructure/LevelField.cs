@@ -7,13 +7,18 @@ public class LevelField : MonoBehaviour
     [SerializeField, HideInInspector]
     private Moveable moveable;
 
-    [SerializeField]
+    [SerializeField, HideInInspector]
     private StaticObject staticObject;
 
     public Moveable MoveableObject
     {
         get => moveable;
         set => moveable = value;
+    }
+    public StaticObject StaticObject
+    {
+        get => staticObject;
+        set => staticObject = value;
     }
 
     [SerializeField] private LevelWall parentWall;

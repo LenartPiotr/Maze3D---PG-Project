@@ -84,7 +84,7 @@ public class LevelEditorWindowManager : EditorWindow
 
         var levelData = EditorCubesAlgorithm.GetWallsFromCubes(cubesPositions.ToArray());
 
-        GameObject generatorObject = new GameObject("Level Root");
+        var generatorObject = new GameObject("Level Root");
         var generator = generatorObject.AddComponent<LevelGenerator>();
         generator.SetLevelData(levelData);
         generator.CreateLevelFromData(levelWallSize);
@@ -92,11 +92,26 @@ public class LevelEditorWindowManager : EditorWindow
 
     void PaintFields()
     {
+        bool first = true;
+        Material[] materials = new Material[4];
         foreach (LevelField field in FindObjectsOfType<LevelField>())
         {
             int colorIndex = (field.CanEnter ? 0 : 2) + (field.X + field.Y) % 2;
             Renderer r = field.GetComponent<Renderer>();
-            r.sharedMaterial.color = fieldsColors[colorIndex];
+
+            if (first)
+            {
+                first = false;
+                for (int i = 0; i < 4; i++)
+                {
+                    materials[i] = new(r.sharedMaterial)
+                    {
+                        color = fieldsColors[i],
+                    };
+                }
+            }
+
+            r.sharedMaterial = materials[colorIndex];
         }
     }
 

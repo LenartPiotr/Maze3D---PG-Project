@@ -107,13 +107,14 @@ public class Moveable : MonoBehaviour
         if (strength <= -10) return false;
         Movement nextMovement = GetNextFieldInDirection(movement);
 
-        StaticObject nextStaticObject;
+        if (nextMovement.position.Wall[nextMovement.position.X, nextMovement.position.Y].TryGetStaticObject(out StaticObject nextStaticObject))
+        {
+            if (!nextStaticObject.CanEnter()) return false;
+        }
+
         Moveable nextMoveableObject;
-
-        nextMovement.position.Wall[nextMovement.position.X, nextMovement.position.Y].TryGetStaticObject(out nextStaticObject);
         nextMoveableObject = nextMovement.position.Wall[nextMovement.position.X, nextMovement.position.Y].MoveableObject;
-
-        if (nextStaticObject != null && !nextStaticObject.CanEnter()) return false;
+        
         if (!nextMovement.position.Wall[nextMovement.position.X, nextMovement.position.Y].CanEnter) return false;
         if (nextMoveableObject != null)
         {
@@ -164,20 +165,6 @@ public class Moveable : MonoBehaviour
             X = nX,
             Y = nY
         }, movement.position.Wall.GetSideOutDirection(movement.Rotation) + 2);
-
-        /*
-        addRot = pos.Wall.GetSideOutDirection(movement.Rotation) - movement.Rotation;
-        if (addRot < 0) addRot += 4;
-        addRot += 2 + rotation;
-        addRot %= 4;
-
-        return new Position()
-        {
-            Wall = pos.Wall.GetWallOnSide(movement.Rotation),
-            X = nX,
-            Y = nY
-        };
-        */
     }
     void MoveFromTo(Movement movementFrom, Movement movementTo)
     {
